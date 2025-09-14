@@ -1,0 +1,12 @@
+name: django-bidding-app
+services:
+  app:
+    build:
+        context: .
+        dockerfile: docker/Dockerfile-app
+    container_name: django-bidding-app
+    command: /bin/bash -c "cd /var/www/app/src && python project/manage.py migrate && python project/manage.py collectstatic --noinput && python project/manage.py runserver 0.0.0.0:8080 || sleep 100000"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/var/www/app

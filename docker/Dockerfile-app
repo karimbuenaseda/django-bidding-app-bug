@@ -1,0 +1,25 @@
+FROM python:3.7
+
+# Set environment vars
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Install system deps
+RUN apt-get update && apt-get install -y \
+    build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory in the container
+WORKDIR /var/www/app
+
+# Copy the Python requirements file into the container
+COPY src/requirements.txt /var/www/app/
+
+# Install Python dependencies
+RUN pip install -r requirements.txt --no-cache-dir
+
+# Copy your application code
+COPY src/ ./
+
+# Expose the port the app runs on
+EXPOSE 8080
