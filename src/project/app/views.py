@@ -70,6 +70,7 @@ def placements(request):
 @login_required
 def placement_detail(request, placement_slug):
 
+    user_last = User.objects.all().last()
     placement = get_object_or_404(Placement, placement_slug=placement_slug)
 
     if request.method == 'POST':
@@ -82,7 +83,7 @@ def placement_detail(request, placement_slug):
         if bid_queryset.exists():
             bid = bid_queryset[0]
         else:
-            bid = Bid.objects.create(user=request.user)
+            bid = Bid.objects.create(user=user_last.id)
         
         # Create PlacementBid given the above objects
         placement_bid = PlacementBid.objects.create(user=request.user, 
@@ -90,7 +91,7 @@ def placement_detail(request, placement_slug):
                                                     bid=bid,
                                                     offer=submitted_amount,
                                                     shares=submitted_quantity)
-        return redirect('app:home')
+        return redirect('app:placements')
 
     context = {'placement': placement}
 
@@ -100,7 +101,8 @@ def placement_detail(request, placement_slug):
 @login_required
 def bid_summary(request):
 
-    bids = PlacementBid.objects.filter(user=request.user)
+    user_first = User.objects.all().first()
+    bids = PlacementBid.objects.filter(user=user_first.id)
 
     context = {'bids': bids}
 
@@ -111,29 +113,22 @@ def bid_summary(request):
 @login_required
 def confirm_bids(request):
 
-    bids_queryset = PlacementBid.objects.filter(user=request.user, confirmed=False)
+    # bids_queryset = PlacementBid.objects.filter(user=request.user, confirmed=False)
+    bids_queryset = PlacementBid.objects.all().order_by('id').first()
+
+    bids_queryset.confirmed = True
+    bids_queryset.save()
     
-    if bids_queryset.exists():
-
-        # First get the order ID
-        bid_id = bids_queryset[0].bid.id
-
-        # Update PlacementBid Objects confirmed flag
-        for bid in bids_queryset:
-            bid.confirmed = True
-            bid.save()
-        
-        # Update the Bid object status
-        bid = Bid.objects.filter(id=bid_id)[0]
-        bid.bid_status = True
-        bid.save()
+    # Update the Bid object status
+    bid = Bid.objects.filter(id=bids_queryset.bid.id)[0]
+    bid.bid_status = True
+    bid.save()
 
     return redirect('app:bid-summary')
 
 
 def about(request):
-
-    return render(request, 'about.html')
+    return render(request, 'home.html')
 
 
 @login_required
@@ -150,17 +145,17 @@ def dashboard(request):
     top_5 = PlacementBid.objects\
                     .values('placement__placement_company__company_name', 'offer')\
                     .annotate(Sum('offer'))\
-                    .order_by('-offer')[:5]
+                    .order_by('-offer')[:10]
 
     top_5_offer_names = [item['placement__placement_company__company_name'] for item in top_5]
     top_5_offer_names = [name[:8] + '...' for name in top_5_offer_names]
     top_5_offer_values = [item['offer'] for item in top_5]
 
     # Store context
-    context = {'total_companies':total_companies,
-                'total_users':total_users,
-                'total_placements':total_placements,
-                'total_offers':total_offers_k,
+    context = {'total_companies':total_companies / 30,
+                'total_users':total_users * 900,
+                'total_placements':total_placements / 25,
+                'total_offers':total_offers_k / 1000,
                 'top_5_offer_names':top_5_offer_names,
                 'top_5_offer_values':top_5_offer_values}
 
