@@ -27,10 +27,8 @@ Concepts covered in this app
 - `django`
 
 **Running locally:**
-```sh
-# Ffter activating your virtualenv
-python manage.py runserver
-```
+docker-compose down -v
+docker-compose up -d
 
 # Tests
 - Tests performed on this project. What did you do? Which files were used? Was it successful?
